@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Мои финансы</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  --bg:var(--tg-theme-secondary-bg-color,#f2f3f7);
+  --card:var(--tg-theme-section-bg-color,var(--tg-theme-bg-color,#ffffff));
+  --text:var(--tg-theme-text-color,#14161a);
+  --hint:var(--tg-theme-hint-color,#8a8f98);
+  --accent:var(--tg-theme-button-color,#5b5ef4);
+  --accent-text:var(--tg-theme-button-text-color,#ffffff);
+  --sep:rgba(127,127,140,.16);
+  --green:#16b364;
+  --red:#ef4444;
+  --orange:#f59e0b;
+  --radius:20px;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:var(--tg-theme-secondary-bg-color,#0d0e12);
+    --card:var(--tg-theme-section-bg-color,var(--tg-theme-bg-color,#1a1c22));
+    --text:var(--tg-theme-text-color,#f2f3f5);
+    --hint:var(--tg-theme-hint-color,#8b909b);
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text)}
+body{font:15px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;overscroll-behavior-y:none}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:active{transform:scale(.97)}
+input,textarea{font:inherit;color:var(--text)}
+svg{display:block}
+.num{font-variant-numeric:tabular-nums}
+
+#view{padding:14px 16px calc(100px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* header */
+.head{display:flex;align-items:center;gap:12px;margin:2px 2px 14px}
+.head h1{font-size:26px;line-height:1.1;margin:0;font-weight:800;letter-spacing:-.02em;flex:1}
+.head .sub{color:var(--hint);font-size:13px;margin-top:3px}
+.avatar{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:16px;background:linear-gradient(135deg,#6366f1,#a855f7);overflow:hidden}
+.avatar img{width:100%;height:100%;object-fit:cover}
+
+/* month nav */
+.mnav{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-radius:14px;padding:4px;margin-bottom:12px}
+.mbtn{width:38px;height:34px;border:0;border-radius:10px;background:transparent;display:grid;place-items:center;color:var(--accent)}
+.mbtn:disabled{opacity:.25}
+.mlabel{font-weight:650;font-size:15px}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:18px 18px 18px;color:#fff;background:linear-gradient(135deg,#4f46e5 0%,#7c3aed 55%,#c026d3 100%);box-shadow:0 10px 30px -12px rgba(109,40,217,.55)}
+.hero:before,.hero:after{content:"";position:absolute;border-radius:50%;background:rgba(255,255,255,.09)}
+.hero:before{width:220px;height:220px;right:-70px;top:-90px}
+.hero:after{width:140px;height:140px;right:40px;bottom:-90px}
+.hero>*{position:relative;z-index:1}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;opacity:.92}
+.pill{background:rgba(255,255,255,.18);padding:4px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.hero-sum{font-size:36px;font-weight:800;letter-spacing:-.02em;margin:8px 0 2px}
+.hero-sub{font-size:13px;opacity:.85}
+.budget{margin-top:14px}
+.budget-bar{height:8px;border-radius:99px;background:rgba(255,255,255,.22);overflow:hidden}
+.budget-bar i{display:block;height:100%;border-radius:99px;background:#fff}
+.budget-bar.over i{background:#fecaca}
+.budget-t{display:flex;justify-content:space-between;font-size:12px;opacity:.9;margin-top:6px}
+
+/* duo cards */
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.mini{border:0;text-align:left;background:var(--card);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:4px}
+.mini-ic{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;margin-bottom:4px}
+.mini.green .mini-ic{background:rgba(22,179,100,.14);color:var(--green)}
+.mini.red .mini-ic{background:rgba(239,68,68,.13);color:var(--red)}
+.mini-l{font-size:13px;color:var(--hint)}
+.mini-v{font-size:18px;font-weight:750;letter-spacing:-.01em}
+.mini.green .mini-v{color:var(--green)}
+.mini.red .mini-v{color:var(--red)}
+
+/* card */
+.card{background:var(--card);border-radius:var(--radius);padding:16px;margin-top:12px}
+.card-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-h h3{margin:0;font-size:17px;font-weight:700}
+.link{border:0;background:none;color:var(--accent);font-weight:600;font-size:14px;padding:4px}
+
+/* donut */
+.donut-wrap{display:flex;justify-content:center;position:relative;margin:4px 0 14px}
+.donut-c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut-c b{font-size:19px;font-weight:800}
+.donut-c span{font-size:12px;color:var(--hint)}
+.cat-row{display:flex;align-items:center;gap:12px;padding:8px 0}
+.cat-row .ico{width:38px;height:38px;font-size:19px}
+.cat-main{flex:1;min-width:0}
+.cat-top{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.cat-top span:last-child{white-space:nowrap}
+.cat-bar{height:6px;border-radius:9px;background:var(--sep);margin-top:6px;overflow:hidden}
+.cat-bar i{display:block;height:100%;border-radius:9px}
+.cat-pct{font-size:12px;color:var(--hint);width:34px;text-align:right}
+
+/* bars */
+.bars{display:flex;align-items:flex-end;gap:3px;height:84px}
+.bars div{flex:1;border-radius:4px 4px 2px 2px;background:linear-gradient(180deg,#8b5cf6,#6366f1);opacity:.9;min-height:3px}
+.bars div.z{background:var(--sep);opacity:1}
+.bars div.t{background:linear-gradient(180deg,#f472b6,#c026d3)}
+.bars-x{display:flex;justify-content:space-between;color:var(--hint);font-size:11px;margin-top:6px}
+
+/* rows */
+.ico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;flex:none}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;width:100%;border:0;background:none;text-align:left}
+.row+.row{border-top:1px solid var(--sep)}
+.row .mid{flex:1;min-width:0}
+.row .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .s{font-size:13px;color:var(--hint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.row .amt{font-weight:700;white-space:nowrap;text-align:right}
+.row .amt small{display:block;font-weight:500;font-size:12px;color:var(--hint)}
+.day-h{display:flex;justify-content:space-between;font-size:13px;color:var(--hint);font-weight:600;margin:18px 6px 6px;text-transform:uppercase;letter-spacing:.03em}
+.day-card{background:var(--card);border-radius:18px;padding:2px 14px}
+
+/* search & chips */
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:14px;padding:0 12px;height:44px}
+.search input{flex:1;border:0;background:transparent;outline:none;font-size:16px}
+.search svg{color:var(--hint)}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:12px -16px 4px;padding:0 16px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:0;background:var(--card);border-radius:999px;padding:8px 13px;font-size:14px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--accent);color:var(--accent-text)}
+.total-line{display:flex;justify-content:space-between;align-items:baseline;margin:14px 6px 0}
+.total-line span{color:var(--hint);font-size:14px}
+.total-line b{font-size:20px}
+
+/* segmented */
+.seg{display:flex;background:var(--sep);border-radius:13px;padding:3px;gap:3px}
+.seg button{flex:1;border:0;background:none;padding:9px 6px;border-radius:10px;font-weight:650;color:var(--hint);font-size:14px}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.seg button .cnt{opacity:.6;font-weight:600;margin-left:4px}
+.sheet .seg button.on{background:var(--bg)}
+
+/* debts */
+.net{border-radius:24px;padding:18px;color:#fff;background:linear-gradient(135deg,#059669,#10b981 60%,#34d399)}
+.net.neg{background:linear-gradient(135deg,#dc2626,#ef4444 55%,#fb7185)}
+.net.zero{background:linear-gradient(135deg,#475569,#64748b)}
+.net-l{font-size:13px;opacity:.9}
+.net-v{font-size:32px;font-weight:800;letter-spacing:-.02em;margin:6px 0 2px}
+.net-s{font-size:13px;opacity:.88}
+.net-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.net-grid div{background:rgba(255,255,255,.16);border-radius:14px;padding:10px 12px;font-size:12px}
+.net-grid b{display:block;font-size:16px;margin-top:2px}
+.debt{display:flex;flex-direction:column;gap:8px;width:100%;border:0;background:var(--card);border-radius:18px;padding:14px;margin-top:10px;text-align:left}
+.debt-top{display:flex;align-items:center;gap:12px;width:100%}
+.debt .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;flex:none}
+.debt .mid{flex:1;min-width:0}
+.debt .t{font-weight:650}
+.debt .s{font-size:13px;color:var(--hint);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.debt .s.late{color:var(--red);font-weight:600}
+.debt .s.soon{color:var(--orange);font-weight:600}
+.debt .amt{text-align:right;font-weight:750;white-space:nowrap}
+.debt .amt small{display:block;font-size:12px;color:var(--hint);font-weight:500}
+.debt.closed{opacity:.55}
+.prog{height:6px;border-radius:9px;background:var(--sep);overflow:hidden}
+.prog i{display:block;height:100%;border-radius:9px;background:var(--green)}
+.prog.owe i{background:var(--accent)}
+.toggle-closed{display:block;margin:16px auto 0;border:0;background:none;color:var(--accent);font-weight:600}
+
+/* empty */
+.empty{text-align:center;padding:30px 18px}
+.empty .e{font-size:46px}
+.empty h4{margin:10px 0 4px;font-size:17px}
+.empty p{margin:0 0 14px;color:var(--hint);font-size:14px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px;font-size:16px;font-weight:650;margin-top:10px;text-align:center}
+.btn.primary{background:var(--accent);color:var(--accent-text)}
+.btn.ghost{background:var(--bg);color:var(--text)}
+.card .btn.ghost{background:var(--sep)}
+.btn.danger{background:rgba(239,68,68,.12);color:var(--red)}
+.btn.green{background:rgba(22,179,100,.14);color:var(--green)}
+.btn.sm{padding:11px;font-size:15px;width:auto;display:inline-block;margin:0}
+
+/* settings */
+.set-row{display:flex;align-items:center;gap:12px;padding:12px 0;border:0;background:none;width:100%;text-align:left}
+.set-row+.set-row{border-top:1px solid var(--sep)}
+.set-row .ico{width:34px;height:34px;border-radius:10px;font-size:17px}
+.set-row .mid{flex:1}
+.set-row .r{color:var(--hint);font-size:14px}
+.set-row.danger{color:var(--red)}
+.cur-grid{display:flex;flex-wrap:wrap;gap:8px}
+.cur-grid .chip{background:var(--sep)}
+.cur-grid .chip.on{background:var(--accent)}
+.foot{text-align:center;color:var(--hint);font-size:12px;margin-top:22px}
+
+/* tabbar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;padding:6px 8px calc(6px + env(safe-area-inset-bottom));background:color-mix(in srgb,var(--card) 88%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-top:1px solid var(--sep)}
+.tab{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--hint);padding:4px 0}
+.tab.on{color:var(--accent)}
+.fab{justify-self:center;width:56px;height:56px;border-radius:50%;border:0;margin-top:-26px;color:#fff;display:grid;place-items:center;background:linear-gradient(135deg,#4f46e5,#a21caf);box-shadow:0 8px 20px -6px rgba(124,58,237,.7),0 0 0 5px var(--bg)}
+
+/* sheet */
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .25s;z-index:40}
+#overlay.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:92vh;overflow-y:auto;background:var(--card);border-radius:24px 24px 0 0;padding:8px 16px calc(18px + env(safe-area-inset-bottom));transform:translateY(105%);transition:transform .32s cubic-bezier(.2,.85,.25,1);max-width:560px;margin:0 auto;overscroll-behavior:contain}
+.sheet.open{transform:none}
+.grab{width:38px;height:5px;border-radius:9px;background:var(--sep);margin:2px auto 12px}
+.sheet h2{font-size:20px;margin:4px 2px 14px;font-weight:800}
+.amount{display:flex;align-items:baseline;justify-content:center;gap:6px;margin:14px 0 6px}
+.amount input{border:0;background:transparent;outline:none;font-size:44px;font-weight:800;text-align:center;width:1.6ch;min-width:1.6ch;max-width:75%;letter-spacing:-.02em;padding:0}
+.amount input::placeholder{color:var(--sep)}
+.amount span{font-size:26px;font-weight:700;color:var(--hint)}
+.amount.shake{animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+.lbl{font-size:13px;color:var(--hint);font-weight:600;margin:16px 4px 8px;text-transform:uppercase;letter-spacing:.04em}
+.cats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cat{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 2px;border-radius:14px;font-size:11px;font-weight:600;color:var(--hint);line-height:1.15;text-align:center}
+.cat .ci{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-size:22px;transition:box-shadow .15s}
+.cat.on{color:var(--text)}
+.cat.on .ci{box-shadow:0 0 0 2.5px var(--card),0 0 0 4.5px var(--accent)}
+.field{background:var(--bg);border-radius:14px;padding:9px 14px;margin-top:10px;display:block}
+.field label{font-size:12px;color:var(--hint);display:block;font-weight:600}
+.field input,.field textarea{border:0;background:transparent;font-size:16px;width:100%;outline:none;padding:3px 0;min-height:24px}
+.field textarea{resize:vertical;min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two .field{margin-top:10px}
+input[type=date]{-webkit-appearance:none;appearance:none}
+.dd-head{display:flex;align-items:center;gap:14px;margin:6px 2px 4px}
+.dd-head .av{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px}
+.dd-head .n{font-size:20px;font-weight:800}
+.dd-head .k{font-size:13px;color:var(--hint)}
+.dd-sum{background:var(--bg);border-radius:18px;padding:16px;margin-top:14px}
+.dd-sum .v{font-size:32px;font-weight:800;letter-spacing:-.02em}
+.dd-sum .l{font-size:13px;color:var(--hint);margin-bottom:10px}
+.kv{display:flex;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--sep);font-size:15px}
+.kv span:first-child{color:var(--hint)}
+.kv .late{color:var(--red);font-weight:600}
+.pay-in{display:flex;gap:8px;align-items:stretch;margin-top:10px}
+.pay-in .field{flex:1;margin:0}
+.pay-in .btn{width:auto;margin:0;padding:0 18px}
+.pay{display:flex;justify-content:space-between;align-items:center;padding:9px 2px;font-size:15px}
+.pay+.pay{border-top:1px solid var(--sep)}
+.pay .x{border:0;background:var(--sep);color:var(--hint);width:26px;height:26px;border-radius:50%;margin-left:10px;font-size:14px;line-height:1}
+.done-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(22,179,100,.14);color:var(--green);padding:6px 11px;border-radius:999px;font-weight:650;font-size:13px}
+
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-140%);background:rgba(20,22,28,.92);color:#fff;padding:10px 16px;border-radius:14px;font-weight:600;font-size:14px;z-index:90;transition:transform .3s cubic-bezier(.2,.85,.25,1);white-space:nowrap}
+#toast.show{transform:translate(-50%,0)}
+</style>
+</head>
+<body>
+<main id="view"></main>
+
+<nav class="tabbar">
+  <button class="tab on" data-act="tab" data-tab="home">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3.5 10.2 12 3.5l8.5 6.7V19a1.5 1.5 0 0 1-1.5 1.5h-4.2v-6h-5.6v6H5A1.5 1.5 0 0 1 3.5 19z"/></svg>Обзор</button>
+  <button class="tab" data-act="tab" data-tab="expenses">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z"/><path d="M9 8.5h6M9 12.5h6"/></svg>Расходы</button>
+  <button class="fab" data-act="add" aria-label="Добавить">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="tab" data-act="tab" data-tab="debts">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-3.5-3.5M20 16H6l3.5 3.5"/></svg>Долги</button>
+  <button class="tab" data-act="tab" data-tab="more">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h9M19 6h1M4 12h3M13 12h7M4 18h11M21 18h-1"/><circle cx="16" cy="6" r="2.2"/><circle cx="10" cy="12" r="2.2"/><circle cx="17.5" cy="18" r="2.2"/></svg>Ещё</button>
+</nav>
+
+<div id="overlay" data-act="close"></div>
+<div class="sheet" id="sheet"></div>
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ---------- Telegram ---------- */
+const tg = window.Telegram && window.Telegram.WebApp;
+const inTg = !!(tg && tg.initData);
+const ver = v => !!(tg && tg.isVersionAtLeast && tg.isVersionAtLeast(v));
+if (tg) {
+  try {
+    tg.ready(); tg.expand();
+    if (ver('6.1')) { tg.setHeaderColor('secondary_bg_color'); tg.setBackgroundColor('secondary_bg_color'); }
+    if (ver('7.7')) tg.disableVerticalSwipes();
+  } catch (e) {}
+}
+const user = (inTg && tg.initDataUnsafe && tg.initDataUnsafe.user) || null;
+const hap = t => { try { if (ver('6.1')) t === 'sel' ? tg.HapticFeedback.selectionChanged() : tg.HapticFeedback.impactOccurred(t || 'light'); } catch (e) {} };
+const notif = t => { try { if (ver('6.1')) tg.HapticFeedback.notificationOccurred(t); } catch (e) {} };
+function ask(msg, cb) {
+  if (inTg && ver('6.2')) tg.showConfirm(msg, ok => ok && cb());
+  else if (window.confirm(msg)) cb();
+}
+
+/* ---------- Справочники ---------- */
+const CATS = [
+  {id:'food',     name:'Продукты',     icon:'🛒', color:'#22c55e'},
+  {id:'cafe',     name:'Кафе',         icon:'☕', color:'#f59e0b'},
+  {id:'transport',name:'Транспорт',    icon:'🚕', color:'#eab308'},
+  {id:'shop',     name:'Покупки',      icon:'🛍️', color:'#a855f7'},
+  {id:'home',     name:'Дом',          icon:'🏠', color:'#6366f1'},
+  {id:'bills',    name:'Связь, счета', icon:'📱', color:'#3b82f6'},
+  {id:'health',   name:'Здоровье',     icon:'💊', color:'#f43f5e'},
+  {id:'fun',      name:'Отдых',        icon:'🎬', color:'#f97316'},
+  {id:'edu',      name:'Обучение',     icon:'📚', color:'#06b6d4'},
+  {id:'gift',     name:'Подарки',      icon:'🎁', color:'#ec4899'},
+  {id:'sport',    name:'Спорт',        icon:'🏋️', color:'#14b8a6'},
+  {id:'other',    name:'Другое',       icon:'📦', color:'#94a3b8'},
+];
+const CURRENCIES = ['сум','₽','₸','$','€','₴','Br','₼','сом'];
+const MONTHS = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_G = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const WD = ['вс','пн','вт','ср','чт','пт','сб'];
+const AV_COLORS = ['#6366f1','#ec4899','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ef4444','#14b8a6','#f97316'];
+
+/* ---------- Утилиты ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const pad = n => String(n).padStart(2, '0');
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const today = () => iso(new Date());
+const parseISO = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const r2 = n => Math.round(n * 100) / 100;
+const sum = (a, f) => a.reduce((s, x) => s + (f ? f(x) : x), 0);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 2});
+const nf0 = new Intl.NumberFormat('ru-RU', {maximumFractionDigits: 0});
+const WHOLE = ['сум','₽','₸','сом'];
+const money = n => (WHOLE.includes(S.settings.currency) && Math.abs(n) >= 100 ? nf0 : nf).format(r2(n)) + '\u00a0' + S.settings.currency;
+const parseAmount = v => { const n = parseFloat(String(v).replace(/\s| /g, '').replace(',', '.')); return isFinite(n) ? r2(n) : 0; };
+const catOf = id => CATS.find(c => c.id === id) || CATS[CATS.length - 1];
+const daysBetween = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 864e5);
+function dayLabel(s) {
+  const t = new Date();
+  if (s === iso(t)) return 'Сегодня';
+  t.setDate(t.getDate() - 1);
+  if (s === iso(t)) return 'Вчера';
+  const d = parseISO(s);
+  return d.getDate() + ' ' + MONTHS_G[d.getMonth()] + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '') + ', ' + WD[d.getDay()];
+}
+function shortDate(s) {
+  const d = parseISO(s);
+  return d.getDate() + ' ' + MONTHS_G[d.getMonth()].slice(0, 3) + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+}
+function initials(name) {
+  const p = name.trim().split(/\s+/);
+  return ((p[0] || '')[0] || '?').toUpperCase() + ((p[1] || '')[0] || '').toUpperCase();
+}
+function avColor(name) { let h = 0; for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0; return AV_COLORS[h % AV_COLORS.length]; }
+const plural = (n, a, b, c) => { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return c; if (n1 > 1 && n1 < 5) return b; if (n1 === 1) return a; return c; };
+
+/* ---------- Хранилище: localStorage + Telegram CloudStorage ---------- */
+const LS_KEY = 'tgfin_state_v1';
+function normalize(s) {
+  s = s || {};
+  return {
+    v: 1, updated: s.updated || 0,
+    settings: Object.assign({currency: 'сум', budget: 0}, s.settings || {}),
+    expenses: Array.isArray(s.expenses) ? s.expenses.filter(e => e && e.amount > 0 && e.date) : [],
+    debts: Array.isArray(s.debts) ? s.debts.filter(d => d && d.amount > 0 && d.person).map(d => Object.assign({payments: []}, d)) : [],
+  };
+}
+function loadLocal() { try { return normalize(JSON.parse(localStorage.getItem(LS_KEY))); } catch (e) { return normalize(); } }
+let S = loadLocal();
+const cloudOK = inTg && ver('6.9') && !!tg.CloudStorage;
+let cloudTimer;
+function save() {
+  S.updated = Date.now();
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
+  if (cloudOK) { clearTimeout(cloudTimer); cloudTimer = setTimeout(pushCloud, 700); }
+}
+const CH = 3800; // лимит значения CloudStorage — 4096 символов
+function chunks(str) {
+  const out = []; let i = 0;
+  while (i < str.length) {
+    let j = Math.min(i + CH, str.length);
+    const c = str.charCodeAt(j - 1);
+    if (j < str.length && c >= 0xD800 && c <= 0xDBFF) j--; // не режем эмодзи пополам
+    out.push(str.slice(i, j)); i = j;
+  }
+  return out.length ? out : [''];
+}
+function pushCloud() {
+  try {
+    const parts = chunks(JSON.stringify(S));
+    let left = parts.length;
+    parts.forEach((p, i) => tg.CloudStorage.setItem('c' + i, p, () => { if (--left === 0) tg.CloudStorage.setItem('n', String(parts.length)); }));
+  } catch (e) {}
+}
+function pullCloud() {
+  if (!cloudOK) return;
+  tg.CloudStorage.getItem('n', (err, nv) => {
+    const n = parseInt(nv, 10);
+    if (err || !n) { if (S.updated) pushCloud(); return; }
+    const keys = Array.from({length: n}, (_, i) => 'c' + i);
+    tg.CloudStorage.getItems(keys, (e2, vals) => {
+      if (e2 || !vals) return;
+      try {
+        const remote = normalize(JSON.parse(keys.map(k => vals[k] || '').join('')));
+        if (remote.updated > S.updated) { S = remote; try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} render(); }
+        else if (remote.updated < S.updated) pushCloud();
+      } catch (x) {}
+    });
+  });
+}
+
+/* ---------- Состояние интерфейса ---------- */
+const NOW = new Date();
+const ui = {tab: 'home', y: NOW.getFullYear(), m: NOW.getMonth(), cat: null, q: '', debtTab: 'lent', showClosed: false};
+let lastCat = 'food';
+
+const ym = (y, m) => y + '-' + pad(m + 1);
+const monthExp = (y, m) => { const k = ym(y, m); return S.expenses.filter(e => e.date.slice(0, 7) === k); };
+const isCurMonth = () => ui.y === NOW.getFullYear() && ui.m === NOW.getMonth();
+const paid = d => r2(sum(d.payments || [], p => p.amount));
+const left = d => Math.max(0, r2(d.amount - paid(d)));
+const isOpen = d => left(d) > 0;
+const sortExp = (a, b) => b.date.localeCompare(a.date) || (b.ts || 0) - (a.ts || 0);
+
+/* ---------- Иконки ---------- */
+const I = {
+  l: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>',
+  r: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 5 7 7-7 7"/></svg>',
+  in: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M17 7 7 17M7 8v9h9"/></svg>',
+  out: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>',
+  search: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>',
+};
+
+/* ---------- Компоненты ---------- */
+function monthNav() {
+  const next = !isCurMonth();
+  return `<div class="mnav"><button class="mbtn" data-act="mprev" aria-label="Предыдущий месяц">${I.l}</button>
+    <div class="mlabel">${MONTHS[ui.m]} ${ui.y}</div>
+    <button class="mbtn" data-act="mnext" aria-label="Следующий месяц" ${next ? '' : 'disabled'}>${I.r}</button></div>`;
+}
+function expRow(e, showDate) {
+  const c = catOf(e.cat);
+  return `<button class="row" data-act="editExp" data-id="${e.id}">
+    <div class="ico" style="background:${c.color}22">${c.icon}</div>
+    <div class="mid"><div class="t">${esc(e.note || c.name)}</div><div class="s">${e.note ? c.name : ''}${showDate ? (e.note ? ' · ' : '') + dayLabel(e.date) : ''}</div></div>
+    <div class="amt num">−${money(e.amount)}</div></button>`;
+}
+function donut(parts, total) {
+  const R = 54, C = 2 * Math.PI * R, gap = parts.length > 1 ? 2.5 : 0;
+  let off = 0, segs = '';
+  parts.forEach(p => {
+    const len = p.v / total * C;
+    segs += `<circle r="${R}" cx="70" cy="70" fill="none" stroke="${p.c.color}" stroke-width="18" stroke-dasharray="${Math.max(0.01, len - gap)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;
+    off += len;
+  });
+  return `<svg width="160" height="160" viewBox="0 0 140 140"><circle r="${R}" cx="70" cy="70" fill="none" stroke="var(--sep)" stroke-width="18"/>${segs}</svg>`;
+}
+function emptyState(e, h, p, btn) {
+  return `<div class="empty"><div class="e">${e}</div><h4>${h}</h4><p>${p}</p>${btn || ''}</div>`;
+}
+
+/* ---------- Экран: Обзор ---------- */
+function renderHome() {
+  const list = monthExp(ui.y, ui.m);
+  const total = sum(list, e => e.amount);
+  const [py, pm] = ui.m === 0 ? [ui.y - 1, 11] : [ui.y, ui.m - 1];
+  const prevTotal = sum(monthExp(py, pm), e => e.amount);
+  const dim = new Date(ui.y, ui.m + 1, 0).getDate();
+  const daysPassed = isCurMonth() ? NOW.getDate() : dim;
+  const avg = total / daysPassed;
+
+  let cmp = '';
+  if (prevTotal > 0 && total > 0) {
+    const p = Math.round((total - prevTotal) / prevTotal * 100);
+    cmp = `<span class="pill">${p > 0 ? '▲ ' : p < 0 ? '▼ ' : ''}${Math.abs(p)}% к ${MONTHS_G[pm].replace(/я$/, 'ю').replace(/а$/, 'у')}</span>`;
+  }
+  let budget = '';
+  const B = +S.settings.budget || 0;
+  if (B > 0) {
+    const pct = Math.min(100, total / B * 100), over = total > B;
+    let tail = '';
+    if (!over && isCurMonth()) { const dl = dim - NOW.getDate() + 1; tail = ` · ${money((B - total) / dl)}/день`; }
+    budget = `<div class="budget"><div class="budget-bar ${over ? 'over' : ''}"><i style="width:${pct}%"></i></div>
+      <div class="budget-t"><span>${over ? 'Бюджет превышен на ' + money(total - B) : 'Осталось ' + money(B - total) + tail}</span><span>${Math.round(total / B * 100)}% из ${money(B)}</span></div></div>`;
+  }
+
+  const lent = sum(S.debts.filter(d => d.type === 'lent'), left);
+  const owe = sum(S.debts.filter(d => d.type === 'owe'), left);
+  const name = user ? user.first_name : '';
+  const av = user && user.photo_url ? `<img src="${esc(user.photo_url)}" alt="">` : esc(name ? name[0].toUpperCase() : 'С');
+
+  let h = `<div class="head"><div style="flex:1"><h1>${name ? 'Привет, ' + esc(name) + ' 👋' : 'Мои финансы'}</h1><div class="sub">Расходы и долги под контролем</div></div><div class="avatar">${av}</div></div>`;
+  h += monthNav();
+  h += `<section class="hero">
+    <div class="hero-top"><span>Потрачено за ${MONTHS[ui.m].toLowerCase()}</span>${cmp}</div>
+    <div class="hero-sum num">${money(total)}</div>
+    <div class="hero-sub">≈ ${money(avg)} в день · ${list.length} ${plural(list.length, 'покупка', 'покупки', 'покупок')}</div>
+    ${budget}</section>`;
+  h += `<div class="duo">
+    <button class="mini green" data-act="goDebts" data-t="lent"><div class="mini-ic">${I.in}</div><div class="mini-l">Мне должны</div><div class="mini-v num">${money(lent)}</div></button>
+    <button class="mini red" data-act="goDebts" data-t="owe"><div class="mini-ic">${I.out}</div><div class="mini-l">Я должен</div><div class="mini-v num">${money(owe)}</div></button></div>`;
+
+  if (!S.expenses.length && !S.debts.length) {
+    h += `<div class="card">${emptyState('👛', 'Начните вести учёт', 'Добавьте первый расход или долг — статистика появится здесь автоматически.',
+      '<button class="btn primary" data-act="add">Добавить расход</button><button class="btn ghost" data-act="demo">Посмотреть на примере</button>')}</div>`;
+    return h;
+  }
+  if (!list.length) {
+    h += `<div class="card">${emptyState('🗓️', 'В этом месяце пусто', 'Расходов за ' + MONTHS[ui.m].toLowerCase() + ' пока нет.', isCurMonth() ? '<button class="btn primary" data-act="add">Добавить расход</button>' : '')}</div>`;
+    return h;
+  }
+
+  // по категориям
+  const by = {};
+  list.forEach(e => by[e.cat] = (by[e.cat] || 0) + e.amount);
+  const parts = Object.keys(by).map(k => ({c: catOf(k), v: by[k]})).sort((a, b) => b.v - a.v);
+  h += `<div class="card"><div class="card-h"><h3>По категориям</h3></div>
+    <div class="donut-wrap">${donut(parts, total)}<div class="donut-c"><b class="num">${nf.format(Math.round(total))}</b><span>${parts.length} ${plural(parts.length, 'категория', 'категории', 'категорий')}</span></div></div>
+    ${parts.map(p => `<button class="row cat-row" style="padding:8px 0;border:0" data-act="filterCat" data-cat="${p.c.id}">
+      <div class="ico" style="background:${p.c.color}22">${p.c.icon}</div>
+      <div class="cat-main"><div class="cat-top"><span>${p.c.name}</span><span class="num">${money(p.v)}</span></div>
+      <div class="cat-bar"><i style="width:${p.v / parts[0].v * 100}%;background:${p.c.color}"></i></div></div>
+      <div class="cat-pct num">${Math.round(p.v / total * 100)}%</div></button>`).join('')}</div>`;
+
+  // по дням
+  const days = Array(dim).fill(0);
+  list.forEach(e => days[+e.date.slice(8) - 1] += e.amount);
+  const max = Math.max(...days) || 1;
+  const maxDay = days.indexOf(Math.max(...days)) + 1;
+  h += `<div class="card"><div class="card-h"><h3>По дням</h3><span style="color:var(--hint);font-size:13px">макс. ${maxDay} ${MONTHS_G[ui.m]}</span></div>
+    <div class="bars">${days.map((v, i) => `<div class="${v ? '' : 'z'} ${isCurMonth() && i + 1 === NOW.getDate() ? 't' : ''}" style="height:${v ? Math.max(4, v / max * 100) : 3}%" title="${i + 1}: ${money(v)}"></div>`).join('')}</div>
+    <div class="bars-x"><span>1</span><span>10</span><span>20</span><span>${dim}</span></div></div>`;
+
+  // последние
+  const recent = list.slice().sort(sortExp).slice(0, 5);
+  h += `<div class="card" style="padding-top:12px;padding-bottom:6px"><div class="card-h" style="margin-bottom:2px"><h3>Последние</h3><button class="link" data-act="tab" data-tab="expenses">Все</button></div>
+    ${recent.map(e => expRow(e, true)).join('')}</div>`;
+  return h;
+}
+
+/* ---------- Экран: Расходы ---------- */
+function renderExpenses() {
+  const list = monthExp(ui.y, ui.m);
+  const used = [...new Set(list.map(e => e.cat))];
+  let h = `<div class="head"><h1>Расходы</h1></div>${monthNav()}
+    <label class="search">${I.search}<input id="q" type="search" placeholder="Поиск по комментарию" value="${esc(ui.q)}" autocomplete="off"></label>`;
+  if (used.length > 1) {
+    h += `<div class="chips"><button class="chip ${ui.cat ? '' : 'on'}" data-act="chip" data-cat="">Все</button>
+      ${CATS.filter(c => used.includes(c.id)).map(c => `<button class="chip ${ui.cat === c.id ? 'on' : ''}" data-act="chip" data-cat="${c.id}">${c.icon} ${c.name}</button>`).join('')}</div>`;
+  }
+  return h + '<div id="expList"></div>';
+}
+function fillExpList() {
+  const box = $('#expList'); if (!box) return;
+  const q = ui.q.trim().toLowerCase();
+  const list = monthExp(ui.y, ui.m)
+    .filter(e => !ui.cat || e.cat === ui.cat)
+    .filter(e => !q || (e.note || '').toLowerCase().includes(q) || catOf(e.cat).name.toLowerCase().includes(q))
+    .sort(sortExp);
+  if (!list.length) {
+    box.innerHTML = `<div class="card">${emptyState(q || ui.cat ? '🔍' : '🧾', q || ui.cat ? 'Ничего не найдено' : 'Нет расходов', q || ui.cat ? 'Попробуйте изменить фильтр.' : 'Нажмите «+», чтобы добавить расход.')}</div>`;
+    return;
+  }
+  const groups = {};
+  list.forEach(e => (groups[e.date] = groups[e.date] || []).push(e));
+  box.innerHTML = `<div class="total-line"><span>${list.length} ${plural(list.length, 'операция', 'операции', 'операций')}</span><b class="num">${money(sum(list, e => e.amount))}</b></div>` +
+    Object.keys(groups).map(d => `<div class="day-h"><span>${dayLabel(d)}</span><span class="num">${money(sum(groups[d], e => e.amount))}</span></div>
+      <div class="day-card">${groups[d].map(e => expRow(e)).join('')}</div>`).join('');
+}
+
+/* ---------- Экран: Долги ---------- */
+function dueInfo(d) {
+  if (!isOpen(d)) return {txt: 'Погашен', cls: ''};
+  if (!d.due) return {txt: d.note ? esc(d.note) : 'с ' + shortDate(d.date), cls: ''};
+  const n = daysBetween(today(), d.due);
+  if (n < 0) return {txt: `Просрочен на ${-n} ${plural(-n, 'день', 'дня', 'дней')}`, cls: 'late'};
+  if (n === 0) return {txt: 'Срок — сегодня', cls: 'soon'};
+  if (n <= 3) return {txt: `Срок через ${n} ${plural(n, 'день', 'дня', 'дней')}`, cls: 'soon'};
+  return {txt: 'до ' + shortDate(d.due), cls: ''};
+}
+function renderDebts() {
+  const lent = sum(S.debts.filter(d => d.type === 'lent'), left);
+  const owe = sum(S.debts.filter(d => d.type === 'owe'), left);
+  const net = r2(lent - owe);
+  const cnt = t => S.debts.filter(d => d.type === t && isOpen(d)).length;
+  let h = `<div class="head"><h1>Долги</h1><button class="btn primary sm" data-act="addDebt">+ Долг</button></div>`;
+  h += `<section class="net ${net > 0 ? '' : net < 0 ? 'neg' : 'zero'}">
+    <div class="net-l">Чистый баланс</div>
+    <div class="net-v num">${net > 0 ? '+' : net < 0 ? '−' : ''}${money(Math.abs(net))}</div>
+    <div class="net-s">${net > 0 ? 'Вам должны больше, чем вы' : net < 0 ? 'Вы должны больше, чем вам' : 'Все в расчёте 🤝'}</div>
+    <div class="net-grid"><div>Мне должны<b class="num">${money(lent)}</b></div><div>Я должен<b class="num">${money(owe)}</b></div></div></section>`;
+  h += `<div class="seg" style="margin-top:14px">
+    <button class="${ui.debtTab === 'lent' ? 'on' : ''}" data-act="debtTab" data-t="lent">Мне должны<span class="cnt">${cnt('lent') || ''}</span></button>
+    <button class="${ui.debtTab === 'owe' ? 'on' : ''}" data-act="debtTab" data-t="owe">Я должен<span class="cnt">${cnt('owe') || ''}</span></button></div>`;
+
+  const all = S.debts.filter(d => d.type === ui.debtTab);
+  const open = all.filter(isOpen).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999') || b.date.localeCompare(a.date));
+  const closed = all.filter(d => !isOpen(d)).sort((a, b) => b.date.localeCompare(a.date));
+  if (!open.length) {
+    h += `<div class="card">${emptyState(ui.debtTab === 'lent' ? '🤲' : '🎉', ui.debtTab === 'lent' ? 'Вам никто не должен' : 'Вы никому не должны',
+      ui.debtTab === 'lent' ? 'Запишите, кому дали в долг — и не забудете напомнить.' : 'Отлично! Если займёте — запишите, чтобы не забыть вернуть.',
+      '<button class="btn primary" data-act="addDebt">Добавить долг</button>')}</div>`;
+  }
+  h += open.map(debtCard).join('');
+  if (closed.length) {
+    h += `<button class="toggle-closed" data-act="toggleClosed">${ui.showClosed ? 'Скрыть' : 'Показать'} погашенные (${closed.length})</button>`;
+    if (ui.showClosed) h += closed.map(debtCard).join('');
+  }
+  return h;
+}
+function debtCard(d) {
+  const l = left(d), p = paid(d), info = dueInfo(d);
+  return `<button class="debt ${isOpen(d) ? '' : 'closed'}" data-act="openDebt" data-id="${d.id}">
+    <div class="debt-top"><div class="av" style="background:${avColor(d.person)}">${esc(initials(d.person))}</div>
+      <div class="mid"><div class="t">${esc(d.person)}</div><div class="s ${info.cls}">${info.txt}</div></div>
+      <div class="amt num" style="color:${!isOpen(d) ? 'var(--hint)' : d.type === 'lent' ? 'var(--green)' : 'var(--red)'}">${money(isOpen(d) ? l : d.amount)}${p > 0 && isOpen(d) ? `<small>из ${money(d.amount)}</small>` : ''}</div></div>
+    ${p > 0 && isOpen(d) ? `<div class="prog ${d.type}"><i style="width:${p / d.amount * 100}%"></i></div>` : ''}</button>`;
+}
+
+/* ---------- Экран: Ещё ---------- */
+function renderMore() {
+  const name = user ? [user.first_name, user.last_name].filter(Boolean).join(' ') : 'Гость';
+  const av = user && user.photo_url ? `<img src="${esc(user.photo_url)}" alt="">` : esc(name[0]);
+  return `<div class="head"><h1>Настройки</h1></div>
+  <div class="card" style="display:flex;align-items:center;gap:14px"><div class="avatar" style="width:52px;height:52px;font-size:20px">${av}</div>
+    <div><div style="font-weight:700;font-size:17px">${esc(name)}</div><div style="color:var(--hint);font-size:13px">${cloudOK ? '☁️ Данные синхронизируются с облаком Telegram' : '📱 Данные хранятся на этом устройстве'}</div></div></div>
+  <div class="card"><div class="card-h"><h3>Валюта</h3></div><div class="cur-grid">
+    ${CURRENCIES.map(c => `<button class="chip ${S.settings.currency === c ? 'on' : ''}" data-act="currency" data-c="${c}">${c}</button>`).join('')}</div></div>
+  <div class="card"><div class="card-h"><h3>Бюджет на месяц</h3></div>
+    <label class="field" style="margin-top:0"><label>Лимит расходов, ${esc(S.settings.currency)} (0 — без лимита)</label>
+    <input id="budget" inputmode="decimal" value="${S.settings.budget || ''}" placeholder="Например, 5 000 000"></label></div>
+  <div class="card" style="padding-top:6px;padding-bottom:6px">
+    <button class="set-row" data-act="export"><div class="ico" style="background:#3b82f622">📤</div><div class="mid">Экспорт данных</div><div class="r">JSON</div></button>
+    <button class="set-row" data-act="import"><div class="ico" style="background:#10b98122">📥</div><div class="mid">Импорт данных</div></button>
+    <button class="set-row" data-act="demo"><div class="ico" style="background:#a855f722">✨</div><div class="mid">Заполнить примером</div></button>
+    <button class="set-row danger" data-act="wipe"><div class="ico" style="background:#ef444422">🗑️</div><div class="mid">Удалить все данные</div></button></div>
+  <div class="foot">Расходов: ${S.expenses.length} · Долгов: ${S.debts.length}<br>Мои финансы · v1.0</div>`;
+}
+
+/* ---------- Рендер ---------- */
+function render() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === ui.tab));
+  const v = $('#view');
+  v.innerHTML = ({home: renderHome, expenses: renderExpenses, debts: renderDebts, more: renderMore})[ui.tab]();
+  if (ui.tab === 'expenses') fillExpList();
+}
+function rerenderAnim() { const v = $('#view'); v.style.animation = 'none'; void v.offsetWidth; v.style.animation = ''; render(); }
+
+/* ---------- Нижняя шторка ---------- */
+const sheet = $('#sheet'), overlay = $('#overlay');
+let backHandler = null;
+function openSheet(html) {
+  sheet.innerHTML = '<div class="grab"></div>' + html;
+  sheet.scrollTop = 0;
+  requestAnimationFrame(() => { sheet.classList.add('open'); overlay.classList.add('open'); });
+  if (inTg && ver('6.1') && !backHandler) { backHandler = closeSheet; tg.BackButton.onClick(backHandler); tg.BackButton.show(); }
+}
+function closeSheet() {
+  sheet.classList.remove('open'); overlay.classList.remove('open');
+  document.activeElement && document.activeElement.blur();
+  if (backHandler) { tg.BackButton.offClick(backHandler); tg.BackButton.hide(); backHandler = null; }
+}
+let toastT;
+function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 1800); }
+function shake(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); notif('error'); }
+
+/* --- форма расхода / долга --- */
+function openAdd(kind, item) {
+  const editing = !!item;
+  let html = editing ? '' : `<div class="seg" id="kindSeg">
+    <button data-k="expense" class="${kind === 'expense' ? 'on' : ''}">Расход</button>
+    <button data-k="debt" class="${kind === 'debt' ? 'on' : ''}">Долг</button></div>`;
+  openSheet(html + '<div id="formBody"></div>');
+  const draw = k => {
+    $('#formBody').innerHTML = k === 'expense' ? expenseForm(item) : debtForm(item);
+    k === 'expense' ? bindExpense(item) : bindDebt(item);
+    fitAmount($('#fAmount'));
+    if (!editing) setTimeout(() => { const a = $('#fAmount'); if (a && sheet.classList.contains('open')) a.focus(); }, 350);
+  };
+  sheet.querySelectorAll('#kindSeg button').forEach(b => b.onclick = () => {
+    sheet.querySelectorAll('#kindSeg button').forEach(x => x.classList.toggle('on', x === b)); hap('sel'); draw(b.dataset.k);
+  });
+  draw(kind);
+}
+function expenseForm(e) {
+  const cat = e ? e.cat : lastCat;
+  return `${e ? '<h2>Изменить расход</h2>' : ''}
+    <div class="amount" id="amtBox"><input id="fAmount" inputmode="decimal" placeholder="0" value="${e ? e.amount : ''}" autocomplete="off"><span>${esc(S.settings.currency)}</span></div>
+    <div class="lbl">Категория</div>
+    <div class="cats">${CATS.map(c => `<button class="cat ${c.id === cat ? 'on' : ''}" data-cat="${c.id}"><span class="ci" style="background:${c.color}22">${c.icon}</span>${c.name}</button>`).join('')}</div>
+    <div class="two"><label class="field"><label>Дата</label><input id="fDate" type="date" value="${e ? e.date : today()}" max="${today()}"></label>
+    <label class="field"><label>Комментарий</label><input id="fNote" value="${esc(e ? e.note : '')}" placeholder="Необязательно" maxlength="80"></label></div>
+    <button class="btn primary" id="fSave">${e ? 'Сохранить' : 'Добавить расход'}</button>
+    ${e ? '<button class="btn danger" id="fDel">Удалить</button>' : ''}`;
+}
+function bindExpense(item) {
+  let cat = item ? item.cat : lastCat;
+  sheet.querySelectorAll('.cat').forEach(b => b.onclick = () => {
+    cat = b.dataset.cat; sheet.querySelectorAll('.cat').forEach(x => x.classList.toggle('on', x === b)); hap('sel');
+  });
+  $('#fSave').onclick = () => {
+    const amount = parseAmount($('#fAmount').value);
+    if (!(amount > 0)) return shake($('#amtBox'));
+    const data = {amount, cat, date: $('#fDate').value || today(), note: $('#fNote').value.trim()};
+    if (item) Object.assign(item, data);
+    else S.expenses.push(Object.assign({id: uid(), ts: Date.now()}, data));
+    lastCat = cat; save(); closeSheet(); render(); notif('success'); toast(item ? 'Сохранено' : 'Расход добавлен');
+  };
+  const del = $('#fDel');
+  if (del) del.onclick = () => ask('Удалить этот расход?', () => {
+    S.expenses = S.expenses.filter(x => x !== item); save(); closeSheet(); render(); toast('Удалено');
+  });
+}
+function debtForm(d) {
+  const type = d ? d.type : ui.debtTab;
+  const people = [...new Set(S.debts.map(x => x.person))];
+  return `${d ? '<h2>Изменить долг</h2>' : ''}
+    <div class="seg" id="typeSeg" style="margin-top:${d ? 0 : 12}px">
+      <button data-t="lent" class="${type === 'lent' ? 'on' : ''}">💚 Мне должны</button>
+      <button data-t="owe" class="${type === 'owe' ? 'on' : ''}">❤️ Я должен</button></div>
+    <div class="amount" id="amtBox"><input id="fAmount" inputmode="decimal" placeholder="0" value="${d ? d.amount : ''}" autocomplete="off"><span>${esc(S.settings.currency)}</span></div>
+    <label class="field" id="personBox"><label id="personLbl">${type === 'lent' ? 'Кто должен' : 'Кому должен'}</label>
+      <input id="fPerson" list="peopleList" value="${esc(d ? d.person : '')}" placeholder="Имя" maxlength="40" autocomplete="off"></label>
+    <datalist id="peopleList">${people.map(p => `<option value="${esc(p)}">`).join('')}</datalist>
+    <div class="two"><label class="field"><label>Дата</label><input id="fDate" type="date" value="${d ? d.date : today()}"></label>
+      <label class="field"><label>Вернуть до</label><input id="fDue" type="date" value="${d && d.due ? d.due : ''}"></label></div>
+    <label class="field"><label>Комментарий</label><input id="fNote" value="${esc(d ? d.note : '')}" placeholder="Например, на билеты" maxlength="80"></label>
+    <button class="btn primary" id="fSave">${d ? 'Сохранить' : 'Добавить долг'}</button>`;
+}
+function bindDebt(item) {
+  let type = item ? item.type : ui.debtTab;
+  sheet.querySelectorAll('#typeSeg button').forEach(b => b.onclick = () => {
+    type = b.dataset.t; sheet.querySelectorAll('#typeSeg button').forEach(x => x.classList.toggle('on', x === b));
+    $('#personLbl').textContent = type === 'lent' ? 'Кто должен' : 'Кому должен'; hap('sel');
+  });
+  $('#fSave').onclick = () => {
+    const amount = parseAmount($('#fAmount').value);
+    const person = $('#fPerson').value.trim();
+    if (!(amount > 0)) return shake($('#amtBox'));
+    if (!person) return shake($('#personBox'));
+    const data = {type, amount, person, date: $('#fDate').value || today(), due: $('#fDue').value || '', note: $('#fNote').value.trim()};
+    if (item) Object.assign(item, data);
+    else S.debts.push(Object.assign({id: uid(), ts: Date.now(), payments: []}, data));
+    ui.debtTab = type; save(); notif('success');
+    if (item) { openDebt(item.id); render(); toast('Сохранено'); }
+    else { closeSheet(); ui.tab = 'debts'; rerenderAnim(); toast('Долг добавлен'); }
+  };
+}
+
+/* --- карточка долга --- */
+function openDebt(id) {
+  const d = S.debts.find(x => x.id === id); if (!d) return;
+  const l = left(d), p = paid(d), open = l > 0, info = dueInfo(d);
+  const pays = (d.payments || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+  openSheet(`<div class="dd-head"><div class="av" style="background:${avColor(d.person)}">${esc(initials(d.person))}</div>
+      <div><div class="n">${esc(d.person)}</div><div class="k">${d.type === 'lent' ? 'Должен вам' : 'Вы должны'}</div></div></div>
+    <div class="dd-sum">
+      <div class="l">${open ? 'Осталось вернуть' : 'Сумма долга'}</div>
+      <div class="v num" style="color:${open ? (d.type === 'lent' ? 'var(--green)' : 'var(--red)') : 'var(--text)'}">${money(open ? l : d.amount)}</div>
+      ${open ? `<div class="prog ${d.type}" style="margin-top:12px"><i style="width:${p / d.amount * 100}%"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--hint);margin-top:6px"><span>Возвращено ${money(p)}</span><span>из ${money(d.amount)}</span></div>`
+        : '<div style="margin-top:8px"><span class="done-badge">✓ Полностью погашен</span></div>'}
+    </div>
+    <div style="margin-top:6px">
+      <div class="kv"><span>Дата</span><span>${shortDate(d.date)}</span></div>
+      ${d.due ? `<div class="kv"><span>Вернуть до</span><span class="${info.cls === 'late' ? 'late' : ''}">${shortDate(d.due)}${info.cls === 'late' ? ' · просрочен' : ''}</span></div>` : ''}
+      ${d.note ? `<div class="kv"><span>Комментарий</span><span style="text-align:right;max-width:65%">${esc(d.note)}</span></div>` : ''}
+    </div>
+    ${open ? `<div class="lbl">${d.type === 'lent' ? 'Вам вернули' : 'Вы вернули'}</div>
+      <div class="pay-in"><label class="field" id="payBox"><label>Сумма</label><input id="payAmt" inputmode="decimal" placeholder="${nf.format(l)}" autocomplete="off"></label>
+      <button class="btn primary" id="payBtn">Внести</button></div>
+      <button class="btn green" id="payAll">Погасить полностью · ${money(l)}</button>` : ''}
+    ${pays.length ? `<div class="lbl">История возвратов</div>${pays.map(x => `<div class="pay"><span>${shortDate(x.date)}</span><span style="display:flex;align-items:center"><b class="num">${money(x.amount)}</b><button class="x" data-pid="${x.id}" aria-label="Удалить">✕</button></span></div>`).join('')}` : ''}
+    <div class="two" style="margin-top:8px"><button class="btn ghost" id="dEdit">Изменить</button><button class="btn danger" id="dDel">Удалить</button></div>
+    ${d.type === 'lent' && open && inTg ? '<button class="btn ghost" id="dRemind">💬 Напомнить о долге</button>' : ''}`);
+
+  const addPay = amt => {
+    amt = Math.min(r2(amt), l);
+    d.payments = d.payments || [];
+    d.payments.push({id: uid(), amount: amt, date: today()});
+    save(); render();
+    if (left(d) <= 0) { notif('success'); toast('Долг погашен 🎉'); } else { hap('medium'); toast('Платёж записан'); }
+    openDebt(d.id);
+  };
+  if (open) {
+    $('#payBtn').onclick = () => { const a = parseAmount($('#payAmt').value); if (!(a > 0)) return shake($('#payBox')); addPay(a); };
+    $('#payAll').onclick = () => addPay(l);
+  }
+  sheet.querySelectorAll('.pay .x').forEach(b => b.onclick = () => ask('Удалить этот платёж?', () => {
+    d.payments = d.payments.filter(x => x.id !== b.dataset.pid); save(); render(); openDebt(d.id);
+  }));
+  $('#dEdit').onclick = () => openAdd('debt', d);
+  $('#dDel').onclick = () => ask(`Удалить долг «${d.person}»?`, () => {
+    S.debts = S.debts.filter(x => x !== d); save(); closeSheet(); render(); toast('Удалено');
+  });
+  const rem = $('#dRemind');
+  if (rem) rem.onclick = () => {
+    const text = `Привет! Напоминаю про долг — ${money(l)}${d.note ? ' (' + d.note + ')' : ''}. 🙂`;
+    try { tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent(' ') + '&text=' + encodeURIComponent(text)); } catch (e) {}
+  };
+}
+
+/* --- импорт / экспорт --- */
+function doExport() {
+  const data = JSON.stringify(S, null, 1);
+  const show = () => openSheet(`<h2>Экспорт</h2><label class="field"><label>Скопируйте и сохраните этот текст</label><textarea id="exp" readonly>${esc(data)}</textarea></label>`);
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(data).then(() => { toast('Скопировано в буфер'); notif('success'); }, show);
+  else show();
+}
+function doImport() {
+  openSheet(`<h2>Импорт</h2><label class="field"><label>Вставьте ранее экспортированный JSON</label><textarea id="imp" placeholder='{"expenses":[...]}'></textarea></label>
+    <button class="btn primary" id="impGo">Импортировать</button>`);
+  $('#impGo').onclick = () => {
+    let d; try { d = JSON.parse($('#imp').value); } catch (e) { return shake($('#imp').parentNode); }
+    const n = normalize(d);
+    ask(`Заменить текущие данные? (${n.expenses.length} расходов, ${n.debts.length} долгов)`, () => {
+      S = n; save(); closeSheet(); render(); toast('Данные импортированы');
+    });
+  };
+}
+
+/* --- пример данных --- */
+function fillDemo() {
+  const scale = {'₽':1,'сум':140,'₸':5.5,'$':0.011,'€':0.01,'₴':0.45,'Br':0.035,'₼':0.019,'сом':0.95}[S.settings.currency] || 1;
+  const nice = v => { v *= scale; const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1)); return Math.max(p, Math.round(v / p) * p); };
+  const T = {
+    food: [[400, 3200], ['Продукты на неделю', 'Магазин у дома', 'Рынок', '']],
+    cafe: [[250, 1800], ['Кофе', 'Обед', 'Пицца с друзьями', 'Завтрак']],
+    transport: [[80, 900], ['Такси', 'Метро', 'Бензин', '']],
+    shop: [[900, 6000], ['Кроссовки', 'Одежда', 'Наушники']],
+    home: [[300, 2500], ['Бытовая химия', 'Посуда']],
+    bills: [[400, 1200], ['Мобильная связь', 'Интернет', 'Подписка']],
+    health: [[300, 2500], ['Аптека', 'Анализы']],
+    fun: [[500, 3000], ['Кино', 'Концерт', 'Боулинг']],
+    gift: [[1000, 4000], ['Подарок маме', 'День рождения друга']],
+    sport: [[1500, 3500], ['Абонемент в зал']],
+  };
+  const w = ['food','food','food','cafe','cafe','transport','transport','shop','home','bills','health','fun','gift','sport'];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const exp = [];
+  for (let back = 0; back < 45; back++) {
+    const d = new Date(); d.setDate(d.getDate() - back);
+    const n = Math.floor(rnd(0, 3.2));
+    for (let i = 0; i < n; i++) {
+      const c = pick(w), t = T[c];
+      exp.push({id: uid() + i, ts: d.getTime() - i * 1000, cat: c, amount: nice(rnd(t[0][0], t[0][1])), date: iso(d), note: pick(t[1])});
+    }
+  }
+  const dd = n => { const d = new Date(); d.setDate(d.getDate() + n); return iso(d); };
+  S.expenses = exp;
+  S.debts = [
+    {id: uid() + 'a', type: 'lent', person: 'Алексей', amount: nice(5000), date: dd(-12), due: dd(2), note: 'На ремонт машины', payments: [{id: uid() + 'p', amount: nice(2000), date: dd(-4)}]},
+    {id: uid() + 'b', type: 'lent', person: 'Мария К.', amount: nice(1500), date: dd(-20), due: dd(-3), note: 'Билеты в кино', payments: []},
+    {id: uid() + 'c', type: 'lent', person: 'Тимур', amount: nice(3000), date: dd(-6), due: '', note: '', payments: []},
+    {id: uid() + 'd', type: 'owe', person: 'Дмитрий', amount: nice(10000), date: dd(-15), due: dd(20), note: 'Ноутбук', payments: [{id: uid() + 'q', amount: nice(4000), date: dd(-2)}]},
+    {id: uid() + 'e', type: 'owe', person: 'Сестра', amount: nice(2500), date: dd(-30), due: '', note: '', payments: [{id: uid() + 'r', amount: nice(2500), date: dd(-10)}]},
+  ];
+  if (!S.settings.budget) S.settings.budget = nice(60000);
+  save();
+}
+
+/* ---------- Действия ---------- */
+const ACT = {
+  tab: el => { if (ui.tab === el.dataset.tab) return; ui.tab = el.dataset.tab; hap('sel'); window.scrollTo(0, 0); rerenderAnim(); },
+  mprev: () => { if (--ui.m < 0) { ui.m = 11; ui.y--; } hap('sel'); render(); },
+  mnext: () => { if (isCurMonth()) return; if (++ui.m > 11) { ui.m = 0; ui.y++; } hap('sel'); render(); },
+  add: () => { hap('medium'); openAdd(ui.tab === 'debts' ? 'debt' : 'expense'); },
+  addDebt: () => { hap('medium'); openAdd('debt'); },
+  editExp: el => { const e = S.expenses.find(x => x.id === el.dataset.id); if (e) openAdd('expense', e); },
+  openDebt: el => openDebt(el.dataset.id),
+  goDebts: el => { ui.tab = 'debts'; ui.debtTab = el.dataset.t; hap('sel'); window.scrollTo(0, 0); rerenderAnim(); },
+  filterCat: el => { ui.tab = 'expenses'; ui.cat = el.dataset.cat; ui.q = ''; hap('sel'); window.scrollTo(0, 0); rerenderAnim(); },
+  chip: el => { ui.cat = el.dataset.cat || null; hap('sel'); render(); },
+  debtTab: el => { ui.debtTab = el.dataset.t; hap('sel'); render(); },
+  toggleClosed: () => { ui.showClosed = !ui.showClosed; render(); },
+  currency: el => { S.settings.currency = el.dataset.c; save(); hap('sel'); render(); },
+  export: doExport,
+  import: doImport,
+  demo: () => {
+    const go = () => { fillDemo(); ui.tab = 'home'; ui.y = NOW.getFullYear(); ui.m = NOW.getMonth(); rerenderAnim(); toast('Пример загружен'); };
+    (S.expenses.length || S.debts.length) ? ask('Заменить текущие данные примером?', go) : go();
+  },
+  wipe: () => ask('Удалить все расходы и долги? Это действие нельзя отменить.', () => {
+    S.expenses = []; S.debts = []; save(); render(); toast('Данные удалены');
+  }),
+  close: closeSheet,
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (el && ACT[el.dataset.act]) ACT[el.dataset.act](el, e);
+});
+function fitAmount(el) { el.style.width = Math.max(1, el.value.length) + 0.6 + 'ch'; }
+document.addEventListener('input', e => {
+  if (e.target.id === 'q') { ui.q = e.target.value; fillExpList(); }
+  if (e.target.id === 'fAmount') fitAmount(e.target);
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'budget') { S.settings.budget = parseAmount(e.target.value); save(); toast('Бюджет сохранён'); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && sheet.classList.contains('open')) closeSheet();
+  if (e.key === 'Enter' && sheet.classList.contains('open') && e.target.tagName === 'INPUT') {
+    const b = $('#fSave') || $('#payBtn'); if (b) { e.preventDefault(); b.click(); }
+  }
+});
+if (tg && tg.onEvent) tg.onEvent('themeChanged', render);
+
+render();
+pullCloud();
+})();
+</script>
+</body>
+</html>
